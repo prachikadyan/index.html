@@ -1,0 +1,12 @@
+2026-07-26 00:46:47,507  INFO  === NextG Apex dashboard generation started ===
+2026-07-26 00:46:47,508  ERROR  Dashboard generation FAILED
+Traceback (most recent call last):
+  File "D:\Next G\3. Weekly Work\Week08_Dashboard_Demo\generate_dashboard.py", line 389, in main
+    df = pull_data()
+  File "D:\Next G\3. Weekly Work\Week08_Dashboard_Demo\generate_dashboard.py", line 169, in pull_data
+    raise FileNotFoundError(
+    ...<4 lines>...
+    )
+FileNotFoundError: Could not find the recommendations CSV at:
+  D:\Next G\6. Dashboard\app-d65420a7pq81-source\app-d65420a7pq81\tasks\Hybrid_Final_Recommendations_WB.csv
+Check that generate_recommendations.py has run today, and that this path matches the '03_Weekly Work' folder tree (not the '3. Weekly Work' one) — see the folder-naming note in the Week 7 handoff.

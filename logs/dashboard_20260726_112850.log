@@ -1,0 +1,6 @@
+2026-07-26 11:28:50,843  INFO  === NextG Apex dashboard generation started ===
+2026-07-26 11:28:51,109  INFO  Loaded 46,541 rows from D:\Next G\03_Weekly Work\Week07_SQL_Output\Hybrid_Final_Recommendations_WB.csv
+2026-07-26 11:28:51,239  INFO  17 of 40 products still have no photo — drop a file named <ProductID>.jpg/.png into D:\Next G\3. Weekly Work\Week08_Dashboard_Demo\product_photos to add one.
+2026-07-26 11:28:57,912  WARNING  Logo file not found at D:\Next G\3. Weekly Work\Week08_Dashboard_Demo\nextg_logo_b64.txt — dashboard will render without a logo image.
+2026-07-26 11:28:57,984  INFO  Dashboard written to D:\GitHubPages\nextg-recommendation-engine\index.html (1345.1 KB)
+2026-07-26 11:28:57,985  INFO  === Done. Outlets=9662  Recommendations=46541  Products=40 ===
