@@ -511,21 +511,17 @@
   <section class="view" id="view-explorer">
     <div class="section-head">
       <h2>Filter &amp; export recommendations</h2>
-      <div class="section-sub">State &rarr; City &rarr; Beat &rarr; Outlet — narrow down, then download</div>
+      <div class="section-sub">West Bengal &rarr; City &rarr; Outlet — narrow down, then download</div>
     </div>
 
     <div class="explorer-filters">
       <div class="explorer-filter">
         <label for="ex-state">State</label>
-        <select id="ex-state"><option value="">All states</option></select>
+        <select id="ex-state" disabled><option value="West Bengal">West Bengal</option></select>
       </div>
       <div class="explorer-filter">
         <label for="ex-city">City</label>
         <select id="ex-city"><option value="">All cities</option></select>
-      </div>
-      <div class="explorer-filter">
-        <label for="ex-beat">Beat</label>
-        <select id="ex-beat"><option value="">All beats</option></select>
       </div>
       <div class="explorer-filter">
         <label for="ex-outlet">Outlet</label>
@@ -540,13 +536,11 @@
         <button class="dl-btn" id="dl-xlsx">Download Excel (.xlsx)</button>
       </div>
     </div>
-    <div class="explorer-note" id="explorer-beat-note" style="display:none;">Beat and Outlet Name aren't loaded yet — see <span class="mono">outlet_master.csv</span> next to the generator script. Every other column below is already live.</div>
-
     <div class="explorer-table-wrap">
       <table class="explorer-table" id="explorer-table">
         <thead>
           <tr>
-            <th>State</th><th>City</th><th>Beat</th><th>Outlet Code</th><th>Outlet Name</th>
+            <th>State</th><th>City</th><th>Outlet Code</th>
             <th>Rank</th><th>Product Recommended</th><th>Brand</th><th>Confidence</th><th>Score</th>
           </tr>
         </thead>
@@ -1143,7 +1137,7 @@
   document.getElementById('print-btn').addEventListener('click', function(){ window.print(); });
 
   /* ---------------- explorer ---------------- */
-  var exState = { state: '', city: '', beat: '', outlet: '' };
+  var exState = { state: 'West Bengal', city: '', outlet: '' };
   var EXPLORER_ROW_CAP = 500;
   var EXPLORER_OUTLET_OPT_CAP = 500;
 
@@ -1151,75 +1145,41 @@
     sel.innerHTML = '<option value="">' + placeholder + '</option>' + items.map(function(i){ return '<option value="' + esc(i) + '">' + esc(i) + '</option>'; }).join('');
   }
 
-  function beatsFor(state, city){
-    var beats = {};
-    var states = state ? [state] : Object.keys(DATA.hierarchy);
-    states.forEach(function(s){
-      var cities = city ? [city] : Object.keys(DATA.hierarchy[s] || {});
-      cities.forEach(function(c){
-        var cb = (DATA.hierarchy[s] || {})[c] || {};
-        Object.keys(cb).forEach(function(b){ beats[b] = true; });
-      });
-    });
-    return Object.keys(beats).sort();
+  function explorerCities(){
+    return Object.keys(DATA.cityOutlets || {}).sort();
   }
 
-  function outletsFor(state, city, beat){
-    var states = state ? [state] : Object.keys(DATA.hierarchy);
-    var result = [];
-    states.forEach(function(s){
-      var cities = city ? [city] : Object.keys(DATA.hierarchy[s] || {});
-      cities.forEach(function(c){
-        var beatsObj = (DATA.hierarchy[s] || {})[c] || {};
-        var beatKeys = beat ? [beat] : Object.keys(beatsObj);
-        beatKeys.forEach(function(b){ (beatsObj[b] || []).forEach(function(oc){ result.push(oc); }); });
-      });
+  function explorerOutlets(city){
+    var cities = city ? [city] : explorerCities();
+    var seen = {};
+    cities.forEach(function(c){
+      (DATA.cityOutlets[c] || []).forEach(function(oc){ seen[String(oc)] = true; });
     });
-    return result.sort(function(a, b){ return a - b; });
+    return Object.keys(seen).map(Number).sort(function(a, b){ return a - b; });
   }
 
   function updateExCityOptions(){
     var citySel = document.getElementById('ex-city');
-    var cities = exState.state
-      ? Object.keys(DATA.hierarchy[exState.state] || {})
-      : Array.from(new Set(Object.values(DATA.hierarchy).reduce(function(acc, c){ return acc.concat(Object.keys(c)); }, [])));
-    cities.sort();
+    var cities = explorerCities();
     exOptions(citySel, cities, 'All cities');
     if (!(exState.city && cities.indexOf(exState.city) > -1)) exState.city = '';
     citySel.value = exState.city;
-    updateExBeatOptions();
-  }
-
-  function updateExBeatOptions(){
-    var beatSel = document.getElementById('ex-beat');
-    var beats = beatsFor(exState.state, exState.city);
-    exOptions(beatSel, beats, 'All beats');
-    if (!(exState.beat && beats.indexOf(exState.beat) > -1)) exState.beat = '';
-    beatSel.value = exState.beat;
     updateExOutletOptions();
   }
 
   function updateExOutletOptions(){
     var outletSel = document.getElementById('ex-outlet');
-    var outlets = outletsFor(exState.state, exState.city, exState.beat);
+    var outlets = explorerOutlets(exState.city);
     var capped = outlets.slice(0, EXPLORER_OUTLET_OPT_CAP);
     outletSel.innerHTML = '<option value="">All outlets (' + fmt(outlets.length) + ')</option>' +
       capped.map(function(oc){ return '<option value="' + oc + '">' + oc + '</option>'; }).join('') +
-      (outlets.length > capped.length ? '<option value="" disabled>+' + fmt(outlets.length - capped.length) + ' more — narrow with City/Beat first</option>' : '');
+      (outlets.length > capped.length ? '<option value="" disabled>+' + fmt(outlets.length - capped.length) + ' more — narrow with City first</option>' : '');
     if (!(exState.outlet && outlets.indexOf(Number(exState.outlet)) > -1)) exState.outlet = '';
     outletSel.value = exState.outlet;
   }
 
-  document.getElementById('ex-state').addEventListener('change', function(e){
-    exState.state = e.target.value; exState.city = ''; exState.beat = ''; exState.outlet = '';
-    updateExCityOptions(); renderExplorerTable();
-  });
   document.getElementById('ex-city').addEventListener('change', function(e){
-    exState.city = e.target.value; exState.beat = ''; exState.outlet = '';
-    updateExBeatOptions(); renderExplorerTable();
-  });
-  document.getElementById('ex-beat').addEventListener('change', function(e){
-    exState.beat = e.target.value; exState.outlet = '';
+    exState.city = e.target.value; exState.outlet = '';
     updateExOutletOptions(); renderExplorerTable();
   });
   document.getElementById('ex-outlet').addEventListener('change', function(e){
@@ -1227,22 +1187,24 @@
   });
 
   function buildExplorerRows(){
-    var outlets = exState.outlet ? [Number(exState.outlet)] : outletsFor(exState.state, exState.city, exState.beat);
+    var outlets = exState.outlet ? [Number(exState.outlet)] : explorerOutlets(exState.city);
     var rows = [];
     outlets.forEach(function(oc){
-      var meta = DATA.outletMeta[oc];
-      if (!meta) return;
-      var recs = DATA.explorerOutletRecs[oc] || [];
-      if (!recs.length){
-        rows.push({ state: meta.state, city: meta.city, beat: meta.beat, outletCode: oc, outletName: meta.name, empty: true });
-        return;
+      var recs = (DATA.outletRecs || {})[oc] || [];
+      var city = exState.city;
+      if (!city) {
+        Object.keys(DATA.cityOutlets || {}).some(function(c){
+          if ((DATA.cityOutlets[c] || []).map(String).indexOf(String(oc)) > -1) { city = c; return true; }
+          return false;
+        });
       }
       recs.forEach(function(rec, i){
-        var p = DATA.explorerProducts[rec[0]];
+        var p = productById[rec[0]];
         if (!p) return;
         rows.push({
-          state: meta.state, city: meta.city, beat: meta.beat, outletCode: oc, outletName: meta.name,
-          rank: i + 1, product: p.name, brand: p.brand, confidence: CONF_LABEL[rec[2]] || rec[2], score: rec[1].toFixed(3),
+          state: 'West Bengal', city: city || '—', outletCode: oc,
+          rank: i + 1, product: p.name, brand: p.brand, confidence: CONF_LABEL[rec[2]] || rec[2],
+          score: Number(rec[1]).toFixed(3)
         });
       });
     });
@@ -1251,34 +1213,26 @@
 
   function renderExplorerTable(){
     var rows = buildExplorerRows();
-    var hasBeatData = Object.keys(DATA.outletMeta).some(function(k){ return DATA.outletMeta[k].beat !== 'Unassigned'; });
-    document.getElementById('explorer-beat-note').style.display = hasBeatData ? 'none' : 'block';
-
     var distinctOutlets = new Set(rows.map(function(r){ return r.outletCode; })).size;
-    document.getElementById('explorer-count').innerHTML = 'Showing <b>' + fmt(rows.filter(function(r){ return !r.empty; }).length) + '</b> recommendations across <b>' + fmt(distinctOutlets) + '</b> outlets';
+    document.getElementById('explorer-count').innerHTML = 'Showing <b>' + fmt(rows.length) + '</b> recommendations across <b>' + fmt(distinctOutlets) + '</b> outlets';
 
     var shown = rows.slice(0, EXPLORER_ROW_CAP);
-    document.getElementById('explorer-tbody').innerHTML = shown.map(function(r){
-      var nameCell = r.outletName ? esc(r.outletName) : '<span class="muted-inline">—</span>';
-      if (r.empty) {
-        return '<tr><td>' + esc(r.state) + '</td><td>' + esc(r.city) + '</td><td>' + esc(r.beat) + '</td><td class="num">' + r.outletCode + '</td><td>' + nameCell + '</td><td colspan="5" class="muted">No recommendations for this outlet</td></tr>';
-      }
-      return '<tr><td>' + esc(r.state) + '</td><td>' + esc(r.city) + '</td><td>' + esc(r.beat) + '</td><td class="num">' + r.outletCode + '</td><td>' + nameCell + '</td>' +
+    document.getElementById('explorer-tbody').innerHTML = shown.length ? shown.map(function(r){
+      return '<tr><td>' + esc(r.state) + '</td><td>' + esc(r.city) + '</td><td class="num">' + r.outletCode + '</td>' +
         '<td class="num">' + r.rank + '</td><td>' + esc(r.product) + '</td><td>' + esc(r.brand) + '</td><td>' + esc(r.confidence) + '</td><td class="num">' + r.score + '</td></tr>';
-    }).join('');
+    }).join('') : '<tr><td colspan="8" class="muted">No recommendations match the selected filters</td></tr>';
     document.getElementById('explorer-more').textContent = rows.length > EXPLORER_ROW_CAP
       ? ('Showing first ' + fmt(EXPLORER_ROW_CAP) + ' of ' + fmt(rows.length) + ' rows on screen — narrow the filters above, or download the full set below.')
       : '';
 
-    var hasRows = rows.some(function(r){ return !r.empty; });
-    document.getElementById('dl-csv').disabled = !hasRows;
-    document.getElementById('dl-xlsx').disabled = !hasRows || typeof XLSX === 'undefined';
+    document.getElementById('dl-csv').disabled = !rows.length;
+    document.getElementById('dl-xlsx').disabled = !rows.length || typeof XLSX === 'undefined';
   }
 
-  var EXPLORER_HEADERS = ['State', 'City', 'Beat', 'Outlet Code', 'Outlet Name', 'Rank', 'Product Recommended', 'Brand', 'Confidence', 'Score'];
+  var EXPLORER_HEADERS = ['State', 'City', 'Outlet Code', 'Rank', 'Product Recommended', 'Brand', 'Confidence', 'Score'];
   function explorerRowsAsArrays(){
-    return buildExplorerRows().filter(function(r){ return !r.empty; }).map(function(r){
-      return [r.state, r.city, r.beat, r.outletCode, r.outletName, r.rank, r.product, r.brand, r.confidence, r.score];
+    return buildExplorerRows().map(function(r){
+      return [r.state, r.city, r.outletCode, r.rank, r.product, r.brand, r.confidence, r.score];
     });
   }
 
@@ -1296,7 +1250,7 @@
   }
 
   function explorerFilenameTag(){
-    return [exState.state, exState.city, exState.beat, exState.outlet].filter(Boolean).join('_').replace(/\s+/g, '') || 'All';
+    return [exState.city, exState.outlet].filter(Boolean).join('_').replace(/\s+/g, '') || 'All';
   }
 
   document.getElementById('dl-csv').addEventListener('click', function(){
@@ -1316,9 +1270,6 @@
   });
 
   function populateExplorer(){
-    var states = Object.keys(DATA.hierarchy).sort();
-    exOptions(document.getElementById('ex-state'), states, 'All states');
-    if (states.length === 1) { exState.state = states[0]; document.getElementById('ex-state').value = states[0]; }
     updateExCityOptions();
     renderExplorerTable();
   }
