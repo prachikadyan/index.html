@@ -540,7 +540,7 @@
       <table class="explorer-table" id="explorer-table">
         <thead>
           <tr>
-            <th>State</th><th>City</th><th>Outlet Code</th>
+            <th>State</th><th>City</th><th>Outlet Code</th><th>Outlet Name</th>
             <th>Rank</th><th>Product Recommended</th><th>Brand</th><th>Confidence</th><th>Score</th>
           </tr>
         </thead>
@@ -1222,16 +1222,18 @@
     var rows = [];
     locations.forEach(function(location){
       var oc = location.outletCode;
+      var meta = (DATA.outletMeta || {})[oc] || {};
+      var outletName = meta.outletName || meta.name || '—';
       var recs = (DATA.outletRecs || {})[oc] || [];
       if (!recs.length) {
-        rows.push({ state: location.state, city: location.city, outletCode: oc, empty: true });
+        rows.push({ state: location.state, city: location.city, outletCode: oc, outletName: outletName, empty: true });
         return;
       }
       recs.forEach(function(rec, i){
         var p = productById[rec[0]];
         if (!p) return;
         rows.push({
-          state: location.state || '—', city: location.city || '—', outletCode: oc,
+          state: location.state || '—', city: location.city || '—', outletCode: oc, outletName: outletName,
           rank: i + 1, product: p.name, brand: p.brand, confidence: CONF_LABEL[rec[2]] || rec[2],
           score: Number(rec[1]).toFixed(3)
         });
@@ -1249,11 +1251,11 @@
     var shown = rows.slice(0, EXPLORER_ROW_CAP);
     document.getElementById('explorer-tbody').innerHTML = shown.length ? shown.map(function(r){
       if (r.empty) {
-        return '<tr><td>' + esc(r.state) + '</td><td>' + esc(r.city) + '</td><td class="num">' + r.outletCode + '</td><td colspan="5" class="muted">No recommendations available for this outlet.</td></tr>';
+        return '<tr><td>' + esc(r.state) + '</td><td>' + esc(r.city) + '</td><td class="num">' + r.outletCode + '</td><td>' + esc(r.outletName) + '</td><td colspan="5" class="muted">No recommendations available for this outlet.</td></tr>';
       }
-      return '<tr><td>' + esc(r.state) + '</td><td>' + esc(r.city) + '</td><td class="num">' + r.outletCode + '</td>' +
+      return '<tr><td>' + esc(r.state) + '</td><td>' + esc(r.city) + '</td><td class="num">' + r.outletCode + '</td><td>' + esc(r.outletName) + '</td>' +
         '<td class="num">' + r.rank + '</td><td>' + esc(r.product) + '</td><td>' + esc(r.brand) + '</td><td>' + esc(r.confidence) + '</td><td class="num">' + r.score + '</td></tr>';
-    }).join('') : '<tr><td colspan="8" class="muted">No recommendations match the selected filters</td></tr>';
+    }).join('') : '<tr><td colspan="9" class="muted">No recommendations match the selected filters</td></tr>';
     document.getElementById('explorer-more').textContent = rows.length > EXPLORER_ROW_CAP
       ? ('Showing first ' + fmt(EXPLORER_ROW_CAP) + ' of ' + fmt(rows.length) + ' rows on screen — narrow the filters above, or download the full set below.')
       : '';
@@ -1262,10 +1264,10 @@
     document.getElementById('dl-xlsx').disabled = !recommendationCount || typeof XLSX === 'undefined';
   }
 
-  var EXPLORER_HEADERS = ['State', 'City', 'Outlet Code', 'Rank', 'Product Recommended', 'Brand', 'Confidence', 'Score'];
+  var EXPLORER_HEADERS = ['State', 'City', 'Outlet Code', 'Outlet Name', 'Rank', 'Product Recommended', 'Brand', 'Confidence', 'Score'];
   function explorerRowsAsArrays(){
     return buildExplorerRows().filter(function(r){ return !r.empty; }).map(function(r){
-      return [r.state, r.city, r.outletCode, r.rank, r.product, r.brand, r.confidence, r.score];
+      return [r.state, r.city, r.outletCode, r.outletName, r.rank, r.product, r.brand, r.confidence, r.score];
     });
   }
 
